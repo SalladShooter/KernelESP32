@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <string.h>
 
 #define MAX_FILES 10         
@@ -108,7 +107,7 @@ void initFS() {
 }
 
 void printPrompt() {
-  Serial.print(F("root@arduino:"));
+  Serial.print(F("root@esp32:"));
   Serial.print(currentPath);
   Serial.print(F("# "));
 }
@@ -484,11 +483,11 @@ void executeCommand(char* line) {
     Serial.println(F("root"));
   }
   else if (strcmp_P(cmd, PSTR("uname")) == 0) {
-    Serial.println(F("KernelUNO v1.0"));
-    Serial.print(F("Kernel: Arduino "));
+    Serial.println(F("KernelESP32 v1.0"));
+    Serial.print(F("Kernel: ESP32 "));
     Serial.println(F("AVR"));
     Serial.print(F("Hardware: "));
-    Serial.println(F("Arduino UNO"));
+    Serial.println(F("ESP32"));
     Serial.print(F("RAM: "));
     //Serial.print(freeMemory());
     Serial.println(F(" bytes free"));
