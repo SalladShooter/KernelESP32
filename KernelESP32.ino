@@ -1,20 +1,20 @@
 #include <Arduino.h>
 #include <string.h>
-#include <avr/pgmspace.h>
 
 #define MAX_FILES 10         
 #define NAME_LEN 12         
-#define CONTENT_LEN 32      
+#define CONTENT_LEN 32 
 #define PATH_LEN 16         
 #define DMESG_LINES 6
 #define DMESG_LEN 40
+#define INPUT_BUFFER_SIZE 64 // Also affects the size of args and cmd
 
 typedef struct {
   char name[NAME_LEN];
   char content[CONTENT_LEN];
   char parentDir[PATH_LEN];
-  int isDirectory;
-  int active;
+  uint8_t isDirectory;
+  uint8_t active;
 } RAMFile;
 
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
 
 RAMFile fs[MAX_FILES];
 char currentPath[PATH_LEN] = "/";
-char inputBuffer[32] = "";
+char inputBuffer[INPUT_BUFFER_SIZE] = "";
 int inputLen = 0;
 DmesgEntry dmesg[DMESG_LINES];
 int dmesgIndex = 0;
@@ -35,15 +35,17 @@ int dmesgIndex = 0;
 typedef struct {
   char name[ALIAS_NAME_LEN];
   char value[ALIAS_VAL_LEN];
-  int active;
+  uint8_t active;
 } AliasEntry;
 AliasEntry aliases[MAX_ALIASES];
 
+/*
 int freeMemory() {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
+*/
 
 void(* resetFunc) (void) = 0;
 
@@ -129,7 +131,7 @@ void loop() {
         Serial.println();
         executeCommand(inputBuffer);
         inputLen = 0;
-        memset(inputBuffer, 0, 32);
+        memset(inputBuffer, 0, INPUT_BUFFER_SIZE);
         printPrompt();
       } else {
         
@@ -144,7 +146,7 @@ void loop() {
         Serial.print(F("\b \b"));
       }
     }
-    else if (inputLen < 31) {
+    else if (inputLen < INPUT_BUFFER_SIZE - 1) {
       Serial.print(c);
       inputBuffer[inputLen] = c;
       inputLen++;
@@ -192,20 +194,20 @@ int safeConcatPath(char* dest, const char* add) {
 void runScript(const char* content);
 
 void executeCommand(char* line) {
-  char cmd[32] = "";
-  char args[32] = "";
+  char cmd[INPUT_BUFFER_SIZE] = "";
+  char args[INPUT_BUFFER_SIZE] = "";
   int space1 = -1;
   int i, sp, pin, count;
   char buf[40];
 
-  strncpy(cmd, line, 31);
-  cmd[31] = '\0';
+  strncpy(cmd, line, INPUT_BUFFER_SIZE - 1);
+  cmd[INPUT_BUFFER_SIZE - 1] = '\0';
 
   for (i = 0; cmd[i] != '\0'; i++) {
     if (cmd[i] == ' ') {
       space1 = i;
-      strncpy(args, cmd + i + 1, 31);
-      args[31] = '\0';
+      strncpy(args, cmd + i + 1, INPUT_BUFFER_SIZE - 1);
+      args[INPUT_BUFFER_SIZE - 1] = '\0';
       cmd[i] = '\0';
       break;
     }
@@ -471,11 +473,13 @@ void executeCommand(char* line) {
     Serial.print(sec); Serial.println(F("s"));
     addDmesg(F("uptime command"));
   }
+  /*
   else if (strcmp_P(cmd, PSTR("df")) == 0 || strcmp_P(cmd, PSTR("free")) == 0) {
     Serial.print(F("Free RAM: "));
     Serial.print(freeMemory());
     Serial.println(F(" bytes"));
   }
+  */
   else if (strcmp_P(cmd, PSTR("whoami")) == 0) {
     Serial.println(F("root"));
   }
@@ -486,7 +490,7 @@ void executeCommand(char* line) {
     Serial.print(F("Hardware: "));
     Serial.println(F("Arduino UNO"));
     Serial.print(F("RAM: "));
-    Serial.print(freeMemory());
+    //Serial.print(freeMemory());
     Serial.println(F(" bytes free"));
   }
   else if (strcmp_P(cmd, PSTR("reboot")) == 0) {
@@ -612,9 +616,12 @@ void executeCommand(char* line) {
     Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
     Serial.println(F("          pinmode, write, read, gpio, pwm, sh"));
     Serial.println(F("          uptime, uname, dmesg, df, free, whoami, clear, reboot"));
-    Serial.println(F("          alias, slots, find"));
+    Serial.println(F("          alias, slots, find, date"));
     Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
     Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
+  }
+  else if (strcmp_P(cmd, PSTR("date")) == 0) {
+    Serial.println(F(__DATE__ "\t" __TIME__ "\t(time of compilation)"));
   }
   else {
     // check alias
