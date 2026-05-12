@@ -117,7 +117,7 @@ void setup() {
   Serial.begin(115200);
   initFS();
   delay(1000);
-  Serial.println(F("\n--- KernelUNO v1.0 ---"));
+  Serial.println(F("\n--- KernelESP32 v0.9 ---"));
   Serial.println(F("Type 'help' for commands"));
   printPrompt();
 }
