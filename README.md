@@ -1,4 +1,4 @@
-# KernelESP32 v0.9
+# KernelESP32 v1.0
 
 A Unix-like shell and RAM filesystem for ESP-32. Write files, control GPIO pins, read sensors, and run simple scripts all from the serial terminal.
 
