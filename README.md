@@ -33,13 +33,15 @@ A Unix-like shell and RAM filesystem for ESP-32. Write files, control GPIO pins,
 - `find - finds file`
 - `alias - makes an alias`
 - `slots - prints remaining file/directory slots`
+- `edit - basic text editor`
+- `sleep - sleeps/waits for a specific amount of time`
 
 ## How It Works
 
 The code manages a virtual filesystem stored in RAM:
-- Maximum 10 files/directories
-- Max 32 bytes per file content
-- 12 character names
+- Maximum 64 files/directories
+- Max 1024 bytes per file content
+- 24 character names
 - Automatic `/home` and `/dev` directories created on boot
 - `/dev/pin2`, `/dev/pin3`, `/dev/pin4` are special files for GPIO
 
