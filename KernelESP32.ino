@@ -104,12 +104,14 @@ void printPrompt() {
   Serial.print(F("# "));
 }
 
-char *usedMemory() {
-  char charBuffer[128];
-  unsigned long totalHeap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+// Puts the currently used memory into buffer with the format: "[used]kb/[max]kb"
+void usedMemory(char *buffer) {
+  char charBuffer[strlen(buffer)];
+  unsigned long totalHeap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL); // Could be done all in one line but looks better this way
   unsigned long usedHeap = esp_get_free_heap_size();
   sprintf(charBuffer, "%f kb/ %f kb", totalHeap - usedHeap, totalHeap);
-  return charBuffer;
+  strcpy(buffer, charBuffer);
+  free(charBuffer); // Prevent memory leak, untested if this does anything
 }
 
 void setup() {
@@ -557,21 +559,25 @@ void executeCommand(char* line) {
     addDmesg(F("uptime command"));
   }
   else if (strcmp_P(cmd, PSTR("df")) == 0 || strcmp_P(cmd, PSTR("free")) == 0) {
+    char usedMemoryBuffer[32];
+    usedMemory(usedMemoryBuffer);
     Serial.print(F("Free RAM: "));
-    Serial.print(usedMemory());
+    Serial.print(usedMemoryBuffer);
     Serial.println();
   }
   else if (strcmp_P(cmd, PSTR("whoami")) == 0) {
     Serial.println(F("root"));
   }
   else if (strcmp_P(cmd, PSTR("uname")) == 0) {
+    char usedMemoryBuffer[32];
+    usedMemory(usedMemoryBuffer);
     Serial.println(F("KernelESP32 v1.0"));
     Serial.print(F("Kernel: ESP32 "));
     Serial.println(F("AVR"));
     Serial.print(F("Hardware: "));
     Serial.println(F("ESP32"));
     Serial.print(F("RAM: "));
-    Serial.print(usedMemory());
+    Serial.print(usedMemoryBuffer);
   }
   else if (strcmp_P(cmd, PSTR("reboot")) == 0) {
     Serial.println(F("Rebooting..."));
