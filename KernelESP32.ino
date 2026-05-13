@@ -104,11 +104,19 @@ void printPrompt() {
   Serial.print(F("# "));
 }
 
+char *usedMemory() {
+  char charBuffer[128];
+  unsigned long totalHeap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+  unsigned long usedHeap = esp_get_free_heap_size();
+  sprintf(charBuffer, "%f kb/ %f kb", totalHeap - usedHeap, totalHeap);
+  return charBuffer;
+}
+
 void setup() {
   Serial.begin(115200);
   initFS();
   delay(1000);
-  Serial.println(F("\n--- KernelESP32 v0.9 ---"));
+  Serial.println(F("\n--- KernelESP32 v1.0 ---"));
   Serial.println(F("Type 'help' for commands"));
   printPrompt();
 }
@@ -550,8 +558,8 @@ void executeCommand(char* line) {
   }
   else if (strcmp_P(cmd, PSTR("df")) == 0 || strcmp_P(cmd, PSTR("free")) == 0) {
     Serial.print(F("Free RAM: "));
-    Serial.print(esp_get_free_heap_size());
-    Serial.println(F(" bytes"));
+    Serial.print(usedMemory());
+    Serial.println();
   }
   else if (strcmp_P(cmd, PSTR("whoami")) == 0) {
     Serial.println(F("root"));
@@ -563,8 +571,7 @@ void executeCommand(char* line) {
     Serial.print(F("Hardware: "));
     Serial.println(F("ESP32"));
     Serial.print(F("RAM: "));
-    Serial.print(esp_get_free_heap_size());
-    Serial.println(F(" bytes free"));
+    Serial.print(usedMemory());
   }
   else if (strcmp_P(cmd, PSTR("reboot")) == 0) {
     Serial.println(F("Rebooting..."));
