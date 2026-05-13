@@ -698,14 +698,6 @@ void executeCommand(char* line) {
     }
     if (!found) Serial.println(F("Not found."));
   }
-  else if (strcmp_P(cmd, PSTR("help")) == 0) {
-    Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
-    Serial.println(F("          pinmode, write, read, gpio, pwm, sh"));
-    Serial.println(F("          uptime, uname, dmesg, df, free, whoami, clear, reboot"));
-    Serial.println(F("          alias, slots, find, date, edit, sleep"));
-    Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
-    Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
-  }
   else if (strcmp_P(cmd, PSTR("date")) == 0) {
     Serial.println(F(__DATE__ "\t" __TIME__ "\t(time of compilation)"));
   }
@@ -724,6 +716,14 @@ void executeCommand(char* line) {
     }
 
     delay(atoi_safe(args));
+  }
+  else if (strcmp_P(cmd, PSTR("help")) == 0) {
+    Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
+    Serial.println(F("          pinmode, write, read, gpio, pwm, sh"));
+    Serial.println(F("          uptime, uname, dmesg, df, free, whoami, clear, reboot"));
+    Serial.println(F("          alias, slots, find, date, edit, sleep"));
+    Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
+    Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
   }
   else {
     // check alias
