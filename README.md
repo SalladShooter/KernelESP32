@@ -25,8 +25,8 @@ A Unix-like shell and RAM filesystem for ESP-32. Write files, control GPIO pins,
 - `uptime - prints current uptime`
 - `uname - prints system info`
 - `dmesg - prints debug messages`
-- `df - prints free ram (currently broken)`
-- `free - prints free ram (currently broken)`
+- `df - prints free ram `
+- `free - prints free ram `
 - `whoami - prints user (always root)`
 - `clear - clears screen`
 - `reboot - reboots esp32`
