@@ -217,10 +217,6 @@ void textEditor(const char* filename) {
     separator[i] = '-';
   }
 
-=======
-  int filenameLen = strlen(filename) + 2;
-  String separator = "---" + (String("-") * filenameLen) + "---";
->>>>>>> refs/remotes/origin/HEAD
 
   Serial.printf("--- %s ---\n", filename);
   Serial.println("'.' - Saves and exits file");
