@@ -230,7 +230,9 @@ void textEditor(const char* filename) {
     Serial.print(F("> "));
 
     while (1) {
-      while (!Serial.available()) {}
+      while (!Serial.available()) {
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+      }
 
       char c = Serial.read();
 
