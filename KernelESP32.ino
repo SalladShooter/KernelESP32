@@ -1,5 +1,3 @@
-#include <string.h>
-
 #define MAX_FILES 64        
 #define NAME_LEN 24         
 #define CONTENT_LEN 1024 
@@ -193,14 +191,6 @@ int safeConcatPath(char* dest, const char* add) {
 
 void runScript(const char* content);
 
-String operator * (String a, unsigned int b) {
-  String output = "";
-  while (b--) {
-    output += a;
-  }
-  return output;
-}
-
 void textEditor(const char* filename) {
   int i;
   int found = -1;
@@ -221,8 +211,12 @@ void textEditor(const char* filename) {
     return;
   }
 
-  int filenameLen = String(filename).length() + 2;
-  String separator = "---" + (String("-") * filenameLen) + "---";
+  int filenameLen = strlen(filename);
+  char separator[filenameLen + 6];
+  for (uint8_t i = 0; i < filenameLen + 8; i++) {
+    separator[i] = '-';
+  }
+
 
   Serial.printf("--- %s ---\n", filename);
   Serial.println("'.' - Saves and exits file");
@@ -244,7 +238,8 @@ void textEditor(const char* filename) {
   while (1) {
     int lineLen = 0;
     lineNum += 1;
-    String lineStart = String(lineNum) + ") ";
+    char lineStart[16];
+    sprintf(lineStart, "%i)", lineNum);
     Serial.print(lineStart);
 
     while (1) {
