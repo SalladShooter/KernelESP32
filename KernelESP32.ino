@@ -1,12 +1,12 @@
 #include <string.h>
 
-#define MAX_FILES 10         
-#define NAME_LEN 12         
-#define CONTENT_LEN 32 
-#define PATH_LEN 16         
-#define DMESG_LINES 6
-#define DMESG_LEN 40
-#define INPUT_BUFFER_SIZE 64 // Also affects the size of args and cmd
+#define MAX_FILES 64        
+#define NAME_LEN 24         
+#define CONTENT_LEN 1024 
+#define PATH_LEN 48        
+#define DMESG_LINES 16
+#define DMESG_LEN 64
+#define INPUT_BUFFER_SIZE 128 // Also affects the size of args and cmd
 
 typedef struct {
   char name[NAME_LEN];
@@ -191,6 +191,88 @@ int safeConcatPath(char* dest, const char* add) {
 }
 
 void runScript(const char* content);
+
+void textEditor(const char* filename) {
+  int i;
+  int found = -1;
+
+  for (i = 0; i < MAX_FILES; i++) {
+    if (fs[i].active &&
+        !fs[i].isDirectory &&
+        strcmp(fs[i].name, filename) == 0 &&
+        strcmp(fs[i].parentDir, currentPath) == 0) {
+
+      found = i;
+      break;
+    }
+  }
+
+  if (found == -1) {
+    Serial.println(F("File not found."));
+    return;
+  }
+
+  Serial.printf("-- %s --\n", filename);
+
+  if (strlen(fs[found].content) > 0) {
+    Serial.println(F("Current content:"));
+    Serial.println(fs[found].content);
+    Serial.println();
+  }
+
+  fs[found].content[0] = '\0';
+
+  char line[INPUT_BUFFER_SIZE];
+  int contentLen = 0;
+
+  while (1) {
+    int lineLen = 0;
+    Serial.print(F("> "));
+
+    while (1) {
+      while (!Serial.available()) {}
+
+      char c = Serial.read();
+
+      if (c == '\r') {
+        continue;
+      }
+
+      if (c == '\n') {
+        Serial.println();
+        break;
+      }
+
+      if ((c == 8 || c == 127) && lineLen > 0) {
+        lineLen--;
+        Serial.print(F("\b \b"));
+        continue;
+      }
+
+      if (lineLen < CONTENT_LEN - 1) {
+        line[lineLen++] = c;
+        Serial.print(c);
+      }
+    }
+
+    line[lineLen] = '\0';
+
+    if (strcmp(line, ".") == 0) {
+      break;
+    } else if (contentLen + lineLen + 2 < CONTENT_LEN) {
+      if (contentLen > 0) {
+        strcat(fs[found].content, "\n");
+      }
+      strcat(fs[found].content, line);
+      contentLen = strlen(fs[found].content);
+    } else {
+      Serial.println(F("File full."));
+      break;
+    }
+  }
+
+  Serial.println(F("Saved."));
+}
 
 void executeCommand(char* line) {
   char cmd[INPUT_BUFFER_SIZE] = "";
@@ -615,25 +697,41 @@ void executeCommand(char* line) {
     Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
     Serial.println(F("          pinmode, write, read, gpio, pwm, sh"));
     Serial.println(F("          uptime, uname, dmesg, df, free, whoami, clear, reboot"));
-    Serial.println(F("          alias, slots, find, date"));
+    Serial.println(F("          alias, slots, find, date, edit, wait"));
     Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
     Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
   }
   else if (strcmp_P(cmd, PSTR("date")) == 0) {
     Serial.println(F(__DATE__ "\t" __TIME__ "\t(time of compilation)"));
   }
+  else if (strcmp_P(cmd, PSTR("edit")) == 0) {
+    if (args[0] == '\0') {
+      Serial.println(F("Usage: edit [file]"));
+      return;
+    }
+
+    textEditor(args);
+  }
+  else if (strcmp_P(cmd, PSTR("wait")) == 0) {
+    if (args[0] == '\0') {
+      Serial.println(F("Usage: wait [milliseconds]"));
+      return;
+    }
+
+    delay(atoi_safe(args));
+  }
   else {
     // check alias
     int j, resolved = 0;
     for (j = 0; j < MAX_ALIASES; j++) {
       if (aliases[j].active && strcmp(aliases[j].name, cmd) == 0) {
-        char aliasLine[32] = "";
-        strncpy(aliasLine, aliases[j].value, 31);
-        aliasLine[31] = '\0';
+        char aliasLine[INPUT_BUFFER_SIZE] = "";
+        strncpy(aliasLine, aliases[j].value, INPUT_BUFFER_SIZE - 1);
+        aliasLine[INPUT_BUFFER_SIZE - 1] = '\0';
         if (args[0] != '\0') {
           int al = strlen(aliasLine);
-          if (al < 30) { aliasLine[al] = ' '; aliasLine[al+1] = '\0'; }
-          strncat(aliasLine, args, 31 - strlen(aliasLine));
+          if (al < INPUT_BUFFER_SIZE - 2) { aliasLine[al] = ' '; aliasLine[al+1] = '\0'; }
+          strncat(aliasLine, args, INPUT_BUFFER_SIZE - strlen(aliasLine) - 1);
         }
         executeCommand(aliasLine);
         resolved = 1;
