@@ -109,9 +109,8 @@ void usedMemory(char *buffer) {
   char charBuffer[strlen(buffer)];
   unsigned long totalHeap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL); // Could be done all in one line but looks better this way
   unsigned long usedHeap = esp_get_free_heap_size();
-  sprintf(charBuffer, "%f kb/ %f kb", totalHeap - usedHeap, totalHeap);
+  sprintf(charBuffer, "%.2fKb/%.2fKb", (totalHeap - usedHeap)/1024.0, totalHeap/1024.0);
   strcpy(buffer, charBuffer);
-  free(charBuffer); // Prevent memory leak, untested if this does anything
 }
 
 void setup() {
@@ -561,7 +560,7 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("df")) == 0 || strcmp_P(cmd, PSTR("free")) == 0) {
     char usedMemoryBuffer[32];
     usedMemory(usedMemoryBuffer);
-    Serial.print(F("Free RAM: "));
+    Serial.print(F("RAM: "));
     Serial.print(usedMemoryBuffer);
     Serial.println();
   }
