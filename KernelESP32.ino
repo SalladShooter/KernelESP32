@@ -697,7 +697,7 @@ void executeCommand(char* line) {
     Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
     Serial.println(F("          pinmode, write, read, gpio, pwm, sh"));
     Serial.println(F("          uptime, uname, dmesg, df, free, whoami, clear, reboot"));
-    Serial.println(F("          alias, slots, find, date, edit, wait"));
+    Serial.println(F("          alias, slots, find, date, edit, sleep"));
     Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
     Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
   }
@@ -712,9 +712,9 @@ void executeCommand(char* line) {
 
     textEditor(args);
   }
-  else if (strcmp_P(cmd, PSTR("wait")) == 0) {
+  else if (strcmp_P(cmd, PSTR("sleep")) == 0) {
     if (args[0] == '\0') {
-      Serial.println(F("Usage: wait [milliseconds]"));
+      Serial.println(F("Usage: sleep [milliseconds]"));
       return;
     }
 
