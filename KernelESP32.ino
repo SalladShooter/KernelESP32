@@ -38,14 +38,6 @@ typedef struct {
 } AliasEntry;
 AliasEntry aliases[MAX_ALIASES];
 
-/*
-int freeMemory() {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-*/
-
 void(* resetFunc) (void) = 0;
 
 // OPT from issue
@@ -556,13 +548,11 @@ void executeCommand(char* line) {
     Serial.print(sec); Serial.println(F("s"));
     addDmesg(F("uptime command"));
   }
-  /*
   else if (strcmp_P(cmd, PSTR("df")) == 0 || strcmp_P(cmd, PSTR("free")) == 0) {
     Serial.print(F("Free RAM: "));
-    Serial.print(freeMemory());
+    Serial.print(esp_get_free_heap_size());
     Serial.println(F(" bytes"));
   }
-  */
   else if (strcmp_P(cmd, PSTR("whoami")) == 0) {
     Serial.println(F("root"));
   }
@@ -573,7 +563,7 @@ void executeCommand(char* line) {
     Serial.print(F("Hardware: "));
     Serial.println(F("ESP32"));
     Serial.print(F("RAM: "));
-    //Serial.print(freeMemory());
+    Serial.print(esp_get_free_heap_size());
     Serial.println(F(" bytes free"));
   }
   else if (strcmp_P(cmd, PSTR("reboot")) == 0) {
