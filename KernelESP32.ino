@@ -193,6 +193,14 @@ int safeConcatPath(char* dest, const char* add) {
 
 void runScript(const char* content);
 
+String operator * (String a, unsigned int b) {
+  String output = "";
+  while (b--) {
+    output += a;
+  }
+  return output;
+}
+
 void textEditor(const char* filename) {
   int i;
   int found = -1;
@@ -213,7 +221,13 @@ void textEditor(const char* filename) {
     return;
   }
 
-  Serial.printf("-- %s --\n", filename);
+  int filenameLen = String(filename).length() + 2;
+  String separator = "---" + (String("-") * filenameLen) + "---";
+
+  Serial.printf("--- %s ---\n", filename);
+  Serial.println(". - Saves and exits file");
+  Serial.println("cmd - Other commands...");
+  Serial.println(separator);
 
   if (strlen(fs[found].content) > 0) {
     Serial.println(F("Current content:"));
@@ -225,10 +239,13 @@ void textEditor(const char* filename) {
 
   char line[INPUT_BUFFER_SIZE];
   int contentLen = 0;
+  int lineNum = 0;
 
   while (1) {
     int lineLen = 0;
-    Serial.print(F("> "));
+    lineNum += 1;
+    String lineStart = String(lineNum) + ") ";
+    Serial.print(lineStart);
 
     while (1) {
       while (!Serial.available()) {
@@ -561,8 +578,7 @@ void executeCommand(char* line) {
     char usedMemoryBuffer[32];
     usedMemory(usedMemoryBuffer);
     Serial.print(F("RAM: "));
-    Serial.print(usedMemoryBuffer);
-    Serial.println();
+    Serial.println(usedMemoryBuffer);
   }
   else if (strcmp_P(cmd, PSTR("whoami")) == 0) {
     Serial.println(F("root"));
@@ -576,7 +592,7 @@ void executeCommand(char* line) {
     Serial.print(F("Hardware: "));
     Serial.println(F("ESP32"));
     Serial.print(F("RAM: "));
-    Serial.print(usedMemoryBuffer);
+    Serial.println(usedMemoryBuffer);
   }
   else if (strcmp_P(cmd, PSTR("reboot")) == 0) {
     Serial.println(F("Rebooting..."));
