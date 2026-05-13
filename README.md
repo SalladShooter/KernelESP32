@@ -33,7 +33,7 @@ A Unix-like shell and RAM filesystem for ESP-32. Write files, control GPIO pins,
 - `find - finds file`
 - `alias - makes an alias`
 - `slots - prints remaining file/directory slots`
-- `edit - basic text editor`
+- `edit - basic text editor, terminate by typing a "." (no quotes)`
 - `sleep - sleeps/waits for a specific amount of time`
 
 ## How It Works
