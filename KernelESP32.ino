@@ -225,8 +225,8 @@ void textEditor(const char* filename) {
   String separator = "---" + (String("-") * filenameLen) + "---";
 
   Serial.printf("--- %s ---\n", filename);
-  Serial.println(". - Saves and exits file");
-  Serial.println("cmd - Other commands...");
+  Serial.println("'.' - Saves and exits file");
+  Serial.println("'cmd' - Other commands...");
   Serial.println(separator);
 
   if (strlen(fs[found].content) > 0) {
