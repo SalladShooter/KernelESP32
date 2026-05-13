@@ -221,7 +221,7 @@ void textEditor(const char* filename) {
     return;
   }
 
-  int filenameLen = String(filename).length() + 2;
+  int filenameLen = strlen(filename) + 2;
   String separator = "---" + (String("-") * filenameLen) + "---";
 
   Serial.printf("--- %s ---\n", filename);
