@@ -723,6 +723,7 @@ void executeCommand(char* line) {
     Serial.println(F("          alias, slots, find, date, edit, sleep"));
     Serial.println(F("GPIO: gpio [pin] on/off/toggle  |  gpio vixa [count]"));
     Serial.println(F("SH:   sh [file]  -- run script (use ; as line separator)"));
+    Serial.println(F("EDIT:   edit [file]  -- edit file (type a ''.'' then enter to exit and write"));
   }
   else {
     // check alias
