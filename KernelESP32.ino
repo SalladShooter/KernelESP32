@@ -1,3 +1,9 @@
+#include "FFat.h"
+// Tutorials for FatRamFS:
+// https://www.dfrobot.com/blog-1178.html
+// https://www.dfrobot.com/blog-1165.html
+// (nowhere else to put them that I can think of)
+
 #define MAX_FILES 64        
 #define NAME_LEN 24         
 #define CONTENT_LEN 1024 
@@ -19,7 +25,7 @@ typedef struct {
   char message[DMESG_LEN];
 } DmesgEntry;
 
-RAMFile fs[MAX_FILES];
+RAMFile Ramfs[MAX_FILES];
 char currentPath[PATH_LEN] = "/";
 char inputBuffer[INPUT_BUFFER_SIZE] = "";
 int inputLen = 0;
@@ -55,19 +61,19 @@ void addDmesgRam(const char* msg) {
   dmesgIndex++;
 }
 
-void initFS() {
+void initRamFS() {
   int d, i;
 
-  const char* dirs[] = {"home"};
+  const char* dirs[] = {"home", "FAT"};
   for (d = 0; d < 2; d++) {
     for (i = 0; i < MAX_FILES; i++) {
-      if (!fs[i].active) {
-        strncpy(fs[i].name, dirs[d], NAME_LEN - 1);
-        fs[i].name[NAME_LEN - 1] = '\0';
-        strncpy(fs[i].parentDir, "/", PATH_LEN - 1);
-        fs[i].parentDir[PATH_LEN - 1] = '\0';
-        fs[i].isDirectory = 1;
-        fs[i].active = 1;
+      if (!Ramfs[i].active) {
+        strncpy(Ramfs[i].name, dirs[d], NAME_LEN - 1);
+        Ramfs[i].name[NAME_LEN - 1] = '\0';
+        strncpy(Ramfs[i].parentDir, "/", PATH_LEN - 1);
+        Ramfs[i].parentDir[PATH_LEN - 1] = '\0';
+        Ramfs[i].isDirectory = 1;
+        Ramfs[i].active = 1;
         break;
       }
     }
@@ -77,6 +83,17 @@ void initFS() {
   addDmesg(F("Kernel initialized"));
   addDmesg(F("Filesystem mounted"));
   addDmesg(F("Ready for commands"));
+}
+
+void initFatFS() {
+  if(!FFat.begin(true)){ // Mounts FFat
+     Serial.println("An Error has occurred while mounting FFat");
+     Serial.println("Double check your partition settings");
+     return false;
+  }
+
+  
+
 }
 
 void printPrompt() {
@@ -96,11 +113,15 @@ void usedMemory(char *buffer) {
 
 void setup() {
   Serial.begin(115200);
-  initFS();
+  initRamFS();
+  if (!initFatFS()) { return; }
   delay(1000);
   Serial.println(F("\n--- KernelESP32 v1.0 ---"));
   Serial.println(F("Type 'help' for commands"));
   printPrompt();
+
+  
+
 }
 
 void loop() {
@@ -179,10 +200,10 @@ void textEditor(const char* filename) {
   int found = -1;
 
   for (i = 0; i < MAX_FILES; i++) {
-    if (fs[i].active &&
-        !fs[i].isDirectory &&
-        strcmp(fs[i].name, filename) == 0 &&
-        strcmp(fs[i].parentDir, currentPath) == 0) {
+    if (Ramfs[i].active &&
+        !Ramfs[i].isDirectory &&
+        strcmp(Ramfs[i].name, filename) == 0 &&
+        strcmp(Ramfs[i].parentDir, currentPath) == 0) {
 
       found = i;
       break;
@@ -206,13 +227,13 @@ void textEditor(const char* filename) {
   Serial.println("'cmd' - Other commands...");
   Serial.println(separator);
 
-  if (strlen(fs[found].content) > 0) {
+  if (strlen(Ramfs[found].content) > 0) {
     Serial.println(F("Current content:"));
-    Serial.println(fs[found].content);
+    Serial.println(Ramfs[found].content);
     Serial.println();
   }
 
-  fs[found].content[0] = '\0';
+  Ramfs[found].content[0] = '\0';
 
   char line[INPUT_BUFFER_SIZE];
   int contentLen = 0;
@@ -259,10 +280,10 @@ void textEditor(const char* filename) {
       break;
     } else if (contentLen + lineLen + 2 < CONTENT_LEN) {
       if (contentLen > 0) {
-        strcat(fs[found].content, "\n");
+        strcat(Ramfs[found].content, "\n");
       }
-      strcat(fs[found].content, line);
-      contentLen = strlen(fs[found].content);
+      strcat(Ramfs[found].content, line);
+      contentLen = strlen(Ramfs[found].content);
     } else {
       Serial.println(F("File full."));
       break;
@@ -395,9 +416,9 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("ls")) == 0) {
     int empty = 1, j;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && strcmp(fs[j].parentDir, currentPath) == 0) {
-        Serial.print(fs[j].name);
-        if (fs[j].isDirectory) Serial.print(F("/"));
+      if (Ramfs[j].active && strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+        Serial.print(Ramfs[j].name);
+        if (Ramfs[j].isDirectory) Serial.print(F("/"));
         Serial.print(F("  "));
         empty = 0;
       }
@@ -408,16 +429,16 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("mkdir")) == 0 || strcmp_P(cmd, PSTR("touch")) == 0) {
     int foundSlot = -1, j;
     for (j = 0; j < MAX_FILES; j++) {
-      if (!fs[j].active) { foundSlot = j; break; }
+      if (!Ramfs[j].active) { foundSlot = j; break; }
     }
     if (foundSlot == -1) { Serial.println(F("No space.")); return; }
-    strncpy(fs[foundSlot].name, args, NAME_LEN - 1);
-    fs[foundSlot].name[NAME_LEN - 1] = '\0';
-    strncpy(fs[foundSlot].parentDir, currentPath, PATH_LEN - 1);
-    fs[foundSlot].parentDir[PATH_LEN - 1] = '\0';
-    fs[foundSlot].isDirectory = (strcmp_P(cmd, PSTR("mkdir")) == 0);
-    fs[foundSlot].content[0] = '\0';
-    fs[foundSlot].active = 1;
+    strncpy(Ramfs[foundSlot].name, args, NAME_LEN - 1);
+    Ramfs[foundSlot].name[NAME_LEN - 1] = '\0';
+    strncpy(Ramfs[foundSlot].parentDir, currentPath, PATH_LEN - 1);
+    Ramfs[foundSlot].parentDir[PATH_LEN - 1] = '\0';
+    Ramfs[foundSlot].isDirectory = (strcmp_P(cmd, PSTR("mkdir")) == 0);
+    Ramfs[foundSlot].content[0] = '\0';
+    Ramfs[foundSlot].active = 1;
     Serial.println(F("OK."));
   }
   else if (strcmp_P(cmd, PSTR("cd")) == 0) {
@@ -427,10 +448,10 @@ void executeCommand(char* line) {
     } else {
       int j, found = 0;
       for (j = 0; j < MAX_FILES; j++) {
-        if (fs[j].active && fs[j].isDirectory &&
-            strcmp(args, fs[j].name) == 0 &&
-            strcmp(fs[j].parentDir, currentPath) == 0) {
-          if (!safeConcatPath(currentPath, fs[j].name)) {
+        if (Ramfs[j].active && Ramfs[j].isDirectory &&
+            strcmp(args, Ramfs[j].name) == 0 &&
+            strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+          if (!safeConcatPath(currentPath, Ramfs[j].name)) {
             strncpy(currentPath, "/", PATH_LEN - 1);
             currentPath[PATH_LEN - 1] = '\0';
             Serial.println(F("Path too long."));
@@ -457,11 +478,11 @@ void executeCommand(char* line) {
       filename[NAME_LEN - 1] = '\0';
       int j, found = 0;
       for (j = 0; j < MAX_FILES; j++) {
-        if (fs[j].active && !fs[j].isDirectory &&
-            strcmp(filename, fs[j].name) == 0 &&
-            strcmp(fs[j].parentDir, currentPath) == 0) {
-          strncpy(fs[j].content, text, CONTENT_LEN - 1);
-          fs[j].content[CONTENT_LEN - 1] = '\0';
+        if (Ramfs[j].active && !Ramfs[j].isDirectory &&
+            strcmp(filename, Ramfs[j].name) == 0 &&
+            strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+          strncpy(Ramfs[j].content, text, CONTENT_LEN - 1);
+          Ramfs[j].content[CONTENT_LEN - 1] = '\0';
           Serial.println(F("Saved."));
           found = 1;
           break;
@@ -475,10 +496,10 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("cat")) == 0) {
     int j, found = 0;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && !fs[j].isDirectory &&
-          strcmp(args, fs[j].name) == 0 &&
-          strcmp(fs[j].parentDir, currentPath) == 0) {
-        Serial.println(fs[j].content);
+      if (Ramfs[j].active && !Ramfs[j].isDirectory &&
+          strcmp(args, Ramfs[j].name) == 0 &&
+          strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+        Serial.println(Ramfs[j].content);
         found = 1;
         break;
       }
@@ -488,10 +509,10 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("info")) == 0) {
     int j, found = 0;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && strcmp(args, fs[j].name) == 0 && strcmp(fs[j].parentDir, currentPath) == 0) {
-        Serial.print(F("Name: ")); Serial.println(fs[j].name);
-        Serial.print(F("Type: ")); Serial.println(fs[j].isDirectory ? F("Directory") : F("File"));
-        Serial.print(F("Size: ")); Serial.print(strlen(fs[j].content)); Serial.println(F(" bytes"));
+      if (Ramfs[j].active && strcmp(args, Ramfs[j].name) == 0 && strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+        Serial.print(F("Name: ")); Serial.println(Ramfs[j].name);
+        Serial.print(F("Type: ")); Serial.println(Ramfs[j].isDirectory ? F("Directory") : F("File"));
+        Serial.print(F("Size: ")); Serial.print(strlen(Ramfs[j].content)); Serial.println(F(" bytes"));
         found = 1;
         break;
       }
@@ -501,18 +522,18 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("rm")) == 0) {
     int j, found = 0;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && strcmp(args, fs[j].name) == 0 && strcmp(fs[j].parentDir, currentPath) == 0) {
-        if (fs[j].isDirectory) {
+      if (Ramfs[j].active && strcmp(args, Ramfs[j].name) == 0 && strcmp(Ramfs[j].parentDir, currentPath) == 0) {
+        if (Ramfs[j].isDirectory) {
           char dirPath[PATH_LEN];
           snprintf_P(dirPath, PATH_LEN, PSTR("%s%s/"), currentPath, args);
           int k;
           for (k = 0; k < MAX_FILES; k++) {
-            if (fs[k].active && strncmp(fs[k].parentDir, dirPath, strlen(dirPath)) == 0) {
-              fs[k].active = 0;
+            if (Ramfs[k].active && strncmp(Ramfs[k].parentDir, dirPath, strlen(dirPath)) == 0) {
+              Ramfs[k].active = 0;
             }
           }
         }
-        fs[j].active = 0;
+        Ramfs[j].active = 0;
         Serial.println(F("Removed."));
         found = 1;
         break;
@@ -580,12 +601,12 @@ void executeCommand(char* line) {
     }
     int j, found = 0;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && !fs[j].isDirectory &&
-          strcmp(args, fs[j].name) == 0 &&
-          strcmp(fs[j].parentDir, currentPath) == 0) {
+      if (Ramfs[j].active && !Ramfs[j].isDirectory &&
+          strcmp(args, Ramfs[j].name) == 0 &&
+          strcmp(Ramfs[j].parentDir, currentPath) == 0) {
         found = 1;
         addDmesg(F("sh: running script"));
-        runScript(fs[j].content);
+        runScript(Ramfs[j].content);
         break;
       }
     }
@@ -662,7 +683,7 @@ void executeCommand(char* line) {
   else if (strcmp_P(cmd, PSTR("slots")) == 0) {
     int used = 0, j;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active) used++;
+      if (Ramfs[j].active) used++;
     }
     Serial.print(F("("));
     Serial.print(used);
@@ -674,9 +695,9 @@ void executeCommand(char* line) {
     if (args[0] == '\0') { Serial.println(F("Usage: find [name]")); return; }
     int j, found = 0;
     for (j = 0; j < MAX_FILES; j++) {
-      if (fs[j].active && strcmp(fs[j].name, args) == 0) {
-        Serial.print(fs[j].parentDir);
-        Serial.println(fs[j].name);
+      if (Ramfs[j].active && strcmp(Ramfs[j].name, args) == 0) {
+        Serial.print(Ramfs[j].parentDir);
+        Serial.println(Ramfs[j].name);
         found = 1;
       }
     }
