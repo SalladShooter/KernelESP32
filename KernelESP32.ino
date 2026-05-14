@@ -64,7 +64,7 @@ void addDmesgRam(const char* msg) {
 void initRamFS() {
   int d, i;
 
-  const char* dirs[] = {"home", "dev", "FAT"};
+  const char* dirs[] = {"home", "FAT"};
   for (d = 0; d < 2; d++) {
     for (i = 0; i < MAX_FILES; i++) {
       if (!Ramfs[i].active) {
@@ -73,23 +73,6 @@ void initRamFS() {
         strncpy(Ramfs[i].parentDir, "/", PATH_LEN - 1);
         Ramfs[i].parentDir[PATH_LEN - 1] = '\0';
         Ramfs[i].isDirectory = 1;
-        Ramfs[i].active = 1;
-        break;
-      }
-    }
-  }
-
-  char devPath[PATH_LEN] = "/dev/";
-  const char* pins[] = {"pin2", "pin3", "pin4"};
-  for (d = 0; d < 3; d++) {
-    for (i = 0; i < MAX_FILES; i++) {
-      if (!Ramfs[i].active) {
-        strncpy(Ramfs[i].name, pins[d], NAME_LEN - 1);
-        Ramfs[i].name[NAME_LEN - 1] = '\0';
-        strncpy(Ramfs[i].parentDir, devPath, PATH_LEN - 1);
-        Ramfs[i].parentDir[PATH_LEN - 1] = '\0';
-        Ramfs[i].isDirectory = 0;
-        Ramfs[i].content[0] = '\0';
         Ramfs[i].active = 1;
         break;
       }
@@ -501,15 +484,6 @@ void executeCommand(char* line) {
           strncpy(Ramfs[j].content, text, CONTENT_LEN - 1);
           Ramfs[j].content[CONTENT_LEN - 1] = '\0';
           Serial.println(F("Saved."));
-          if (strcmp_P(Ramfs[j].parentDir, PSTR("/dev/")) == 0 && strncmp_P(Ramfs[j].name, PSTR("pin"), 3) == 0) {
-            int devPin = atoi_safe(Ramfs[j].name + 3);
-            if (devPin > 0) {
-              pinMode(devPin, OUTPUT);
-              digitalWrite(devPin, (text[0] == '1') ? HIGH : LOW);
-              snprintf_P(buf, sizeof(buf), PSTR("GPIO %d %s via echo"), devPin, (text[0] == '1') ? "HIGH" : "LOW");
-              addDmesgRam(buf);
-            }
-          }
           found = 1;
           break;
         }
