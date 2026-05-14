@@ -64,7 +64,7 @@ void addDmesgRam(const char* msg) {
 void initRamFS() {
   int d, i;
 
-  const char* dirs[] = {"home", "dev"};
+  const char* dirs[] = {"home", "dev", "FAT"};
   for (d = 0; d < 2; d++) {
     for (i = 0; i < MAX_FILES; i++) {
       if (!Ramfs[i].active) {
