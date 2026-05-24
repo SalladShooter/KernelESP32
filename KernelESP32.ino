@@ -64,8 +64,8 @@ void addDmesgRam(const char* msg) {
 void initRamFS() {
   int d, i;
 
-  const char* dirs[] = {"home", "FAT"};
-  for (d = 0; d < 2; d++) {
+  const char* dirs[] = {"home", "etc", "FAT"};
+  for (d = 0; d < 3; d++) {
     for (i = 0; i < MAX_FILES; i++) {
       if (!Ramfs[i].active) {
         strncpy(Ramfs[i].name, dirs[d], NAME_LEN - 1);
@@ -85,7 +85,37 @@ void initRamFS() {
   addDmesg(F("Ready for commands"));
 }
 
-void initFatFS() {
+// Reads from a FatFS file and put it into the RAMFile
+void FatToRAM(File inFile, RAMFile outFile) {
+
+
+
+}
+
+// Writes a RAMFile to that location in the FatFS
+void RAMToFat(RAMFile inFile) {
+
+  char filename[strlen(inFile.name) + strlen(inFile.parentDir) + 5]; // +5 for leniency
+  sprintf(filename, "%s/%s", inFile.parentDir, inFile.name);
+  if (FFat.exists(filename)) {}
+  File file = FFat.open(filename, FILE_WRITE);
+
+  if(!file){
+      Serial.println("There was an error opening the file for writing");
+      return;
+  }
+
+  if(file.print(inFile.content)){
+      Serial.println("File was written");;
+  } else {
+      Serial.println("File write failed");
+  }
+
+  file.close();
+
+}
+
+bool initFatFS() {
   if(!FFat.begin(true)){ // Mounts FFat
      Serial.println("An Error has occurred while mounting FFat");
      Serial.println("Double check your partition settings");
@@ -721,6 +751,15 @@ void executeCommand(char* line) {
     }
 
     delay(atoi_safe(args));
+  }
+  else if (strcmp_P(cmd, PSTR("testt")) == 0){
+    Serial.println(Ramfs[3].name);
+  }
+  else if (strcmp_P(cmd, PSTR("writet")) == 0){
+    RAMToFat(Ramfs[3]);
+  }
+  else if (strcmp_P(cmd, PSTR("readt")) == 0){
+    
   }
   else if (strcmp_P(cmd, PSTR("help")) == 0) {
     Serial.println(F("Commands: ls, cd, pwd, mkdir, touch, cat, echo, rm, info"));
